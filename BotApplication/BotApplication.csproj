@@ -45,6 +45,9 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Models\MessageModel.cs" />
+    <Compile Include="SimpleJSON.cs" />
+    <Compile Include="TelegramActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
