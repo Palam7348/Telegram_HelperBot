@@ -1,4 +1,5 @@
 ﻿
+using NLog;
 using SimpleJSON;
 using System;
 using System.Collections.Generic;
@@ -15,11 +16,11 @@ namespace BotApplication
 
     class TelegramActivity
     {
+        private Logger logger = LogManager.GetCurrentClassLogger();
         private const string token = "281838030:AAEIvhRWSxfU2SCxi_6_oKJChUnGkbY6rEg";
         private const string link = "https://api.telegram.org/bot";
         private const string botName = "HelperBot";
         private int lastUpdateID;
-
         public event ResponseDelegate Response;
 
 
@@ -32,6 +33,7 @@ namespace BotApplication
         {
             while (true)
             {
+
                 using (WebClient webClient = new WebClient())
                 {
                     string response = webClient.DownloadString(link + token + "/getupdates?offset=" + (lastUpdateID + 1));
@@ -47,7 +49,7 @@ namespace BotApplication
                         int chatID = node["message"]["chat"]["id"].AsInt;
 
                         MessageModel receivedMessage = new MessageModel { Name = name, Message = message, ChatID = chatID };
-
+                        logger.Debug(receivedMessage);
                         switch (receivedMessage.Message)
                         {
                             case "/time":
@@ -55,15 +57,19 @@ namespace BotApplication
 
                                 string nameToSend = botName;
                                 string messageToSend = time.ToString();
-                                
 
-                                MessageModel messageForSending = new MessageModel { Name = nameToSend,
-                                    Message = messageToSend, ChatID = chatID };
+
+                                MessageModel timeMessage = new MessageModel
+                                {
+                                    Name = nameToSend,
+                                    Message = messageToSend,
+                                    ChatID = chatID
+                                };
 
                                 SendMessage(time.ToString(), receivedMessage.ChatID);
-
+                                logger.Debug(timeMessage);
                                 Response(this, receivedMessage);
-                                Response(this, messageForSending);
+                                Response(this, timeMessage);
                                 break;
                             case "/help":
                                 string help = "" +
@@ -71,7 +77,14 @@ namespace BotApplication
 
                                 SendMessage(help, receivedMessage.ChatID);
 
-                                MessageModel helpMessage = new MessageModel { Name = botName, Message = help, ChatID = chatID };
+                                MessageModel helpMessage = new MessageModel
+                                {
+                                    Name = botName,
+                                    Message = help,
+                                    ChatID = chatID
+                                };
+
+                                logger.Debug(helpMessage);
 
                                 Response(this, receivedMessage);
                                 Response(this, helpMessage);
@@ -81,9 +94,8 @@ namespace BotApplication
                                 break;
                         }
                     }
-                    
+
                 }
-                
             }
         }
 

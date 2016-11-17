@@ -1,36 +1,48 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SimpleJSON;
 using System.Threading;
-using System.Net;
+using Microsoft.Win32;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace BotApplication
 {
     class Program
     {
-        static void Main(string[] args)
-        {
-            TelegramActivity telegram = new TelegramActivity();
+        private TelegramActivity telegram;
+        private static Thread updateThread;
+        
 
+        public Program()
+        {
+            telegram = new TelegramActivity();
             telegram.Response += Telegram_Response;
 
-
-            Thread updateThread = new Thread(telegram.GetUpdates);
-            updateThread.IsBackground = true;
+            updateThread = new Thread(telegram.GetUpdates);
+            updateThread.IsBackground = false;
             updateThread.Start();
-
-            for (;;) { }
         }
 
 
+        static void Main(string[] args)
+        {
+            Program telegramBot = new Program();
+            Console.CancelKeyPress += new ConsoleCancelEventHandler(Console_CancelKeyPress);
+            AutoLoadForm form = new AutoLoadForm();
+            form.ShowDialog();
+        }
 
         private static void Telegram_Response(object sender, MessageModel e)
         {
-            Console.WriteLine("{0}: {1}   chatId:{2}", e.Name, e.Message, e.ChatID);
+            Console.WriteLine("{0}: {1}   ", e.Name, e.Message);
         }
+
+
+        static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        {
+            updateThread.Abort();
+        }
+
+
+        
 
     }
 }
