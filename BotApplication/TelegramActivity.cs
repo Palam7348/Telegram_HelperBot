@@ -6,107 +6,66 @@ using System.Net;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Linq;
+using BotApplication.Models;
 
 namespace BotApplication
 {
-
-
-
-    class TelegramActivity
+    public class TelegramActivity
     {
-        private Logger logger = LogManager.GetCurrentClassLogger();
+        private MessageTemplatesStorage templates;
+        private System.Timers.Timer timer = new System.Timers.Timer();
         private const string token = "281838030:AAEIvhRWSxfU2SCxi_6_oKJChUnGkbY6rEg";
         private const string link = "https://api.telegram.org/bot";
-        private const string botName = "HelperBot";
+        private int emptyMessageLength = 23;
         private int lastUpdateID;
 
-        public delegate void ResponseDelegate(object sender, MessageModel e);
-        public event ResponseDelegate Response;
-
-
-        public TelegramActivity()
+        public TelegramActivity(string botName, int intervalOfUpdate)
         {
             lastUpdateID = 0;
+            templates = new MessageTemplatesStorage(botName);
+            timer.Elapsed += Timer_Elapsed;
+            timer.Interval = intervalOfUpdate;
+            timer.Start();
         }
 
-        public void GetUpdates()
+        private void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
-            while (true)
+            WebClient webClient = new WebClient();
+            string url = link + token + "/getupdates?offset=" + (lastUpdateID + 1);
+            string response = webClient.DownloadString(url);
+            if (response.Length > emptyMessageLength)
             {
+                ResponseModel receivedResponse = JsonConvert.DeserializeObject<ResponseModel>(response);
 
-                using (WebClient webClient = new WebClient())
+                for (int i = 0; i < receivedResponse.result.Count; i++)
                 {
-                    string response = webClient.DownloadString(link + token + "/getupdates?offset=" + (lastUpdateID + 1));
-                    if (response.Length <= 23)
-                        continue;
-                    var parsedResponse = (JObject)JsonConvert.DeserializeObject(response);
-                    foreach (var node in parsedResponse["result"])
+                    lastUpdateID = receivedResponse.result[i].updateID;
+                    string receivedMessage = receivedResponse.result[i].message.text;
+                    int receivedChatID = receivedResponse.result[i].message.chat.id;
+
+                    switch (receivedMessage)
                     {
-                        lastUpdateID = int.Parse(node["update_id"].ToString());
-
-                        string name = node["message"]["from"]["first_name"].ToString();
-                        string message = node["message"]["text"].ToString();
-                        int chatID = int.Parse(node["message"]["chat"]["id"].ToString());
-
-                        MessageModel receivedMessage = new MessageModel { Name = name, Message = message, ChatID = chatID };
-                        logger.Debug(receivedMessage);
-                        switch (receivedMessage.Message)
-                        {
-                            case "/time":
-                                DateTime time = DateTime.Now;
-
-                                string nameToSend = botName;
-                                string messageToSend = time.ToString();
-
-
-                                MessageModel timeMessage = new MessageModel
-                                {
-                                    Name = nameToSend,
-                                    Message = messageToSend,
-                                    ChatID = chatID
-                                };
-
-                                SendMessage(time.ToString(), receivedMessage.ChatID);
-                                logger.Debug(timeMessage);
-                                Response(this, receivedMessage);
-                                Response(this, timeMessage);
-                                break;
-                            case "/help":
-                                string help = "" +
-                                    "/time  -  allows to see actual time on the server \n";
-
-                                SendMessage(help, receivedMessage.ChatID);
-
-                                MessageModel helpMessage = new MessageModel
-                                {
-                                    Name = botName,
-                                    Message = help,
-                                    ChatID = chatID
-                                };
-
-                                logger.Debug(helpMessage);
-
-                                Response(this, receivedMessage);
-                                Response(this, helpMessage);
-                                break;
-                            default:
-                                Response(this, receivedMessage);
-                                break;
-                        }
+                        case "/time": SendMessage(templates.SendTime(receivedChatID)); break;
+                        case "/help": SendMessage(templates.SendHelp(receivedChatID)); break;
+                        default: SendMessage(templates.SendDefault(receivedChatID)); break;
                     }
-
                 }
             }
         }
 
+        public void StopBot()
+        {
+            timer.Stop();
+        }
 
-        public void SendMessage(string message, int ChatID)
+
+        private void SendMessage(SendMessageModel model)
         {
             using (WebClient webClient = new WebClient())
             {
                 NameValueCollection pars = new NameValueCollection();
-                pars.Add("chat_id", ChatID.ToString());
-                pars.Add("text", message);
+                pars.Add("chat_id", model.ChatID.ToString());
+                pars.Add("text", model.Message);
                 webClient.UploadValues(link + token + "/sendMessage", pars);
             }
         }

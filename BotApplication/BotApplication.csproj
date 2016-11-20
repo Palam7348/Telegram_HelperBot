@@ -59,9 +59,15 @@
     <Compile Include="AutoLoadForm.Designer.cs">
       <DependentUpon>AutoLoadForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="MessageTemplatesStorage.cs" />
+    <Compile Include="Models\Chat.cs" />
+    <Compile Include="Models\Message.cs" />
+    <Compile Include="Models\ResponseModel.cs" />
+    <Compile Include="Models\ResultModel.cs" />
+    <Compile Include="Models\User.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Models\MessageModel.cs" />
+    <Compile Include="Models\SendMessageModel.cs" />
     <Compile Include="TelegramActivity.cs" />
   </ItemGroup>
   <ItemGroup>
