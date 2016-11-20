@@ -1,18 +1,16 @@
 ﻿
 using NLog;
-using SimpleJSON;
 using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System.Linq;
 
 namespace BotApplication
 {
 
-    public delegate void ResponseDelegate(object sender, MessageModel e);
+
 
     class TelegramActivity
     {
@@ -21,6 +19,8 @@ namespace BotApplication
         private const string link = "https://api.telegram.org/bot";
         private const string botName = "HelperBot";
         private int lastUpdateID;
+
+        public delegate void ResponseDelegate(object sender, MessageModel e);
         public event ResponseDelegate Response;
 
 
@@ -39,14 +39,14 @@ namespace BotApplication
                     string response = webClient.DownloadString(link + token + "/getupdates?offset=" + (lastUpdateID + 1));
                     if (response.Length <= 23)
                         continue;
-                    var parsedResponse = JSON.Parse(response);
-                    foreach (JSONNode node in parsedResponse["result"].AsArray)
+                    var parsedResponse = (JObject)JsonConvert.DeserializeObject(response);
+                    foreach (var node in parsedResponse["result"])
                     {
-                        lastUpdateID = node["update_id"].AsInt;
+                        lastUpdateID = int.Parse(node["update_id"].ToString());
 
-                        string name = node["message"]["from"]["first_name"];
-                        string message = node["message"]["text"];
-                        int chatID = node["message"]["chat"]["id"].AsInt;
+                        string name = node["message"]["from"]["first_name"].ToString();
+                        string message = node["message"]["text"].ToString();
+                        int chatID = int.Parse(node["message"]["chat"]["id"].ToString());
 
                         MessageModel receivedMessage = new MessageModel { Name = name, Message = message, ChatID = chatID };
                         logger.Debug(receivedMessage);

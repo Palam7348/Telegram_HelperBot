@@ -26,8 +26,8 @@ namespace BotApplication
         {
             Program telegramBot = new Program();
             Console.CancelKeyPress += new ConsoleCancelEventHandler(Console_CancelKeyPress);
-            AutoLoadForm form = new AutoLoadForm();
-            form.ShowDialog();
+            //AutoLoadForm form = new AutoLoadForm();
+            //form.ShowDialog();
         }
 
         private static void Telegram_Response(object sender, MessageModel e)
@@ -36,7 +36,7 @@ namespace BotApplication
         }
 
 
-        static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        private static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
             updateThread.Abort();
         }
